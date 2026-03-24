@@ -196,3 +196,101 @@ make reset     # DB/Redis 초기화 후 재시작
 - `/browse` — 웹 브라우징 (mcp__claude-in-chrome 대신 사용)
 
 gstack 스킬이 작동하지 않으면: `cd .claude/skills/gstack && ./setup`
+
+## Git 관리 전략
+
+### 리포지토리 정보
+- **Remote**: `origin` → `https://github.com/pistosmin/base-one.git`
+- **기본 브랜치**: `main`
+
+### 브랜치 전략 (GitHub Flow)
+```
+main ─────────────────────────── 안정 버전, 항상 배포 가능
+  └── feature/phase-1-auth ───── Phase별 기능 브랜치
+  └── fix/login-token-refresh ── 버그 수정 브랜치
+  └── chore/update-deps ──────── 유지보수 브랜치
+```
+
+- **main**: 안정적인 코드만. 직접 푸시 대신 feature 브랜치에서 병합
+- **feature/**: 새 기능 개발 (`feature/phase-N-기능명`)
+- **fix/**: 버그 수정 (`fix/이슈명`)
+- **chore/**: 의존성 업데이트, 설정 변경 등
+
+### AI 에이전트 Git 작업 규칙
+
+1. **커밋 전 항상 검증**:
+   ```bash
+   make lint      # 최소한 린트는 통과
+   # 가능하면 make verify (린트 + 테스트 전체)
+   ```
+
+2. **커밋 단위**: 한 커밋에 하나의 논리적 변경만
+   ```bash
+   # ✅ 좋은 예
+   git commit -m "feat(auth): User 엔티티 및 Repository 구현"
+   git commit -m "feat(auth): Spring Security JWT 설정"
+   
+   # ❌ 나쁜 예
+   git commit -m "feat: Phase 1 전체 구현"  # 너무 큼
+   ```
+
+3. **커밋 메시지 형식** (Conventional Commit):
+   ```
+   <type>(<scope>): <한국어 또는 영어 설명>
+   
+   타입: feat, fix, refactor, test, chore, docs, style
+   스코프: auth, post, comment, vote, user, admin, notification, media, infra
+   ```
+
+4. **Phase 작업 시 Git 흐름**:
+   ```bash
+   # 1. feature 브랜치 생성
+   git checkout -b feature/phase-1-auth
+   
+   # 2. Task별로 커밋 (Task 1.1, 1.2, ...)
+   git add <관련 파일>
+   git commit -m "feat(auth): User 엔티티 및 Repository 구현"
+   
+   # 3. Phase 완료 후 push
+   git push origin feature/phase-1-auth
+   
+   # 4. main에 병합 (또는 PR 생성)
+   git checkout main && git merge feature/phase-1-auth
+   git push origin main
+   ```
+
+5. **푸시 타이밍**:
+   - Task 완료 시: 커밋 (로컬)
+   - Phase 완료 시: `git push` (원격)
+   - 중요 구조 변경 시: 즉시 `git push` (백업)
+
+6. **plan/문서 변경도 커밋**:
+   ```bash
+   git commit -m "docs(phase-1): 구현 이력 업데이트 — Task 1.1~1.3 완료"
+   ```
+
+7. **금지 사항**:
+   - ❌ `git push --force` (히스토리 파괴)
+   - ❌ `.env`, 시크릿, API 키 커밋
+   - ❌ `node_modules/`, `build/`, `dist/` 커밋 (.gitignore에 의해 방지됨)
+   - ❌ 빌드 실패 상태로 main에 병합
+
+### 다른 PC에서 프로젝트 시작하기
+```bash
+# 1. 클론
+git clone https://github.com/pistosmin/base-one.git gravity
+cd gravity
+
+# 2. 환경 설정
+cp .env.example .env   # .env 파일 생성 후 값 수정
+
+# 3. 인프라 시작
+make dev               # Docker Compose (PostgreSQL, Redis, MinIO 등)
+
+# 4. 프론트엔드 의존성
+cd apps/web && npm install && cd ../..
+
+# 5. 개발 서버 시작
+make api               # 터미널 1: Spring Boot (localhost:8080)
+make web               # 터미널 2: Vite (localhost:5173)
+```
