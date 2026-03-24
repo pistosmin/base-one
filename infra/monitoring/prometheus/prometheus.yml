@@ -1,0 +1,32 @@
+# ====================================================
+# Prometheus 설정 파일
+#
+# Spring Boot Actuator 메트릭을 수집하기 위한 설정입니다.
+# scrape_interval: 15초마다 메트릭을 수집합니다.
+#
+# Spring Boot 애플리케이션이 실행 중이어야 메트릭 수집이 정상 동작합니다.
+# 애플리케이션이 꺼져 있어도 Prometheus 자체는 정상 작동합니다.
+# ====================================================
+
+global:
+  # 전역 스크래핑 간격 (15초마다 메트릭 수집)
+  scrape_interval: 15s
+  # 평가 간격 (알림 규칙 등)
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Prometheus 자체 메트릭 수집
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Spring Boot Actuator 메트릭 수집
+  # 백엔드 애플리케이션이 host.docker.internal:8080에서 실행 중이어야 함
+  # /actuator/prometheus 엔드포인트에서 Micrometer 메트릭을 수집
+  - job_name: 'spring-boot'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+        labels:
+          application: 'community-api'

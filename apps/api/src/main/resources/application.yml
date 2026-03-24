@@ -1,0 +1,60 @@
+# ====================================================
+# 애플리케이션 공통 설정
+#
+# 모든 프로필(dev, prod)에 공통으로 적용되는 설정입니다.
+# 프로필별 설정은 application-dev.yml, application-prod.yml에서 오버라이드합니다.
+# ====================================================
+
+spring:
+  # 애플리케이션 이름 (로그, Actuator 등에서 사용)
+  application:
+    name: community-api
+
+  # Virtual Threads 활성화
+  # Java 21의 가상 스레드를 사용하여 동시 요청 처리 성능을 크게 향상
+  # 기존 플랫폼 스레드 대비 훨씬 가벼운 스레드로 높은 동시성 확보
+  threads:
+    virtual:
+      enabled: true
+
+  # JPA 설정
+  jpa:
+    # OSIV(Open Session In View) 비활성화 — 성능 및 추적성을 위해 Service 계층에서만 영속성 사용
+    open-in-view: false
+    # Flyway가 스키마를 관리하므로, Hibernate는 스키마 검증만 수행
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        # SQL 포맷팅 (가독성 향상)
+        format_sql: true
+        # 기본 배치 사이즈 (N+1 방지에 도움)
+        default_batch_fetch_size: 20
+
+  # Flyway 마이그레이션 활성화
+  flyway:
+    enabled: true
+
+# 서버 설정
+server:
+  error:
+    # 에러 응답에 메시지 포함 (디버깅 편의)
+    include-message: always
+
+# SpringDoc (Swagger UI) 설정
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+# Actuator (모니터링) 설정
+management:
+  endpoints:
+    web:
+      exposure:
+        # Prometheus, health, info 엔드포인트 노출
+        include: health,info,prometheus,metrics
+  metrics:
+    tags:
+      application: ${spring.application.name}

@@ -1,0 +1,188 @@
+# ====================================================
+# 커뮤니티 웹앱 - Docker Compose 개발 환경 설정
+#
+# 개발 시 필요한 인프라 서비스를 한 번에 시작합니다.
+# 사용법: make dev (= docker compose up -d)
+#
+# 포함 서비스:
+#   1. PostgreSQL 18 - 메인 데이터베이스
+#   2. Redis 7.4 - 캐시/세션/Rate Limiting
+#   3. MinIO - S3 호환 오브젝트 스토리지 (이미지/파일)
+#   4. MinIO Init - 초기 버킷 생성 (일회성)
+#   5. Prometheus - 메트릭 수집
+#   6. Grafana - 모니터링 대시보드
+#   7. Loki - 로그 수집
+# ====================================================
+
+services:
+
+  # ──────────────────────────────────────────────────
+  # 메인 데이터베이스
+  # 사용자, 게시글, 댓글 등 모든 영구 데이터 저장
+  # AIO(비동기 I/O) 서브시스템 탑재, uuidv7() 내장
+  # ──────────────────────────────────────────────────
+  postgres:
+    image: postgres:18-alpine
+    container_name: community-postgres
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-community}
+      POSTGRES_USER: ${POSTGRES_USER:-community}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-community1234}
+      # 한국 시간대 설정
+      TZ: Asia/Seoul
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-community} -d ${POSTGRES_DB:-community}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - community-network
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────────
+  # 캐시 및 세션 저장소
+  # - JWT 블랙리스트 (로그아웃된 토큰 관리)
+  # - API 응답 캐시 (게시글 목록 등)
+  # - Rate Limiting (로그인 시도 제한 등)
+  # ──────────────────────────────────────────────────
+  redis:
+    image: redis:7.4-alpine
+    container_name: community-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - community-network
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────────
+  # S3 호환 오브젝트 스토리지
+  # 프로필 이미지, 게시글 첨부파일, 썸네일 저장
+  # API: 9000번 포트 | 관리 콘솔: 9001번 포트 (http://localhost:9001)
+  # ──────────────────────────────────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: community-minio
+    ports:
+      - "9000:9000"   # S3 API 엔드포인트
+      - "9001:9001"   # MinIO 웹 관리 콘솔
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - community-network
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────────
+  # MinIO 초기 버킷 생성 (일회성 컨테이너)
+  # community-media 버킷을 자동으로 생성하고 종료
+  # depends_on으로 MinIO가 준비된 후에 실행
+  # ──────────────────────────────────────────────────
+  minio-init:
+    image: minio/mc:latest
+    container_name: community-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: /bin/sh
+    command: /scripts/init-minio.sh
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+    volumes:
+      - ./infra/scripts:/scripts:ro
+    networks:
+      - community-network
+
+  # ──────────────────────────────────────────────────
+  # 메트릭 수집 서버
+  # Spring Boot Actuator에서 JVM, HTTP, DB 메트릭을 수집
+  # http://localhost:9090 에서 PromQL 쿼리 가능
+  # ──────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v3.2.0
+    container_name: community-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - community-network
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────────
+  # 모니터링 대시보드
+  # Prometheus 메트릭 + Loki 로그를 시각화
+  # http://localhost:3000 (기본 계정: admin/admin)
+  # ──────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:11.5.0
+    container_name: community-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      # 개발 환경에서는 간편하게 admin/admin으로 접속
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      # 익명 접근 허용 (개발 환경 편의)
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./infra/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+      - loki
+    networks:
+      - community-network
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────────
+  # 로그 수집 서버
+  # Spring Boot 애플리케이션 로그를 수집하여 Grafana에서 검색 가능
+  # Promtail 또는 직접 HTTP 전송으로 로그 수집
+  # ──────────────────────────────────────────────────
+  loki:
+    image: grafana/loki:3.4.0
+    container_name: community-loki
+    ports:
+      - "3100:3100"
+    networks:
+      - community-network
+    restart: unless-stopped
+
+# ──────────────────────────────────────────────────
+# Docker 볼륨 정의
+# make reset 실행 시 -v 옵션으로 모든 볼륨 삭제 가능
+# ──────────────────────────────────────────────────
+volumes:
+  pgdata:          # PostgreSQL 데이터
+  redis-data:      # Redis 영구 데이터
+  minio-data:      # MinIO 오브젝트 스토리지
+  grafana-data:    # Grafana 대시보드 설정
+
+# ──────────────────────────────────────────────────
+# Docker 네트워크
+# 모든 서비스가 이 네트워크를 통해 내부 통신
+# 서비스명으로 DNS 접근 가능 (예: postgres, redis, minio)
+# ──────────────────────────────────────────────────
+networks:
+  community-network:
+    driver: bridge
