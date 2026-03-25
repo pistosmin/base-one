@@ -42,7 +42,3 @@
 - CLAUDE.md 계층 구조 (루트 + api + web)
 - Claude Code hooks 설정 (.claude/settings.json)
 - Makefile 검증 명령어 추가 (lint, verify 등)
-
-
-
-좋아 아주 잘했어!
