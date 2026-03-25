@@ -19,38 +19,29 @@
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": {
-          "tool_name": "write_to_file",
-          "file_pattern": "**/*.java"
-        },
+        "matcher": "Write",
         "hooks": [
           {
             "type": "command",
-            "command": "if grep -n 'javax\\.' \"$CLAUDE_FILE_PATH\" 2>/dev/null | grep -v '// javax OK' | head -5; then echo '⚠️ javax.* 사용 감지! jakarta.* 로 변경하세요. (Spring Boot 4.0)'; fi"
+            "command": "case \"$CLAUDE_FILE_PATH\" in *.java) if grep -n 'javax\\.' \"$CLAUDE_FILE_PATH\" 2>/dev/null | grep -v '// javax OK' | head -5; then echo '⚠️ javax.* 사용 감지! jakarta.* 로 변경하세요. (Spring Boot 4.0)'; fi ;; esac"
           }
         ]
       },
       {
-        "matcher": {
-          "tool_name": "write_to_file",
-          "file_pattern": "**/*.ts"
-        },
+        "matcher": "Write",
         "hooks": [
           {
             "type": "command",
-            "command": "if grep -n ': any' \"$CLAUDE_FILE_PATH\" 2>/dev/null | grep -v '// any OK' | head -5; then echo '⚠️ any 타입 사용 감지! unknown + 타입 가드로 대체하세요.'; fi"
+            "command": "case \"$CLAUDE_FILE_PATH\" in *.ts) if grep -n ': any' \"$CLAUDE_FILE_PATH\" 2>/dev/null | grep -v '// any OK' | head -5; then echo '⚠️ any 타입 사용 감지! unknown + 타입 가드로 대체하세요.'; fi ;; esac"
           }
         ]
       },
       {
-        "matcher": {
-          "tool_name": "write_to_file",
-          "file_pattern": "**/*.tsx"
-        },
+        "matcher": "Write",
         "hooks": [
           {
             "type": "command",
-            "command": "if grep -n 'react-router-dom' \"$CLAUDE_FILE_PATH\" 2>/dev/null | head -3; then echo '⚠️ react-router-dom 사용 감지! React Router v7에서는 react-router로 import하세요.'; fi"
+            "command": "case \"$CLAUDE_FILE_PATH\" in *.tsx) if grep -n 'react-router-dom' \"$CLAUDE_FILE_PATH\" 2>/dev/null | head -3; then echo '⚠️ react-router-dom 사용 감지! React Router v7에서는 react-router로 import하세요.'; fi ;; esac"
           }
         ]
       }
