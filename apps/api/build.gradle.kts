@@ -23,10 +23,11 @@ plugins {
 group = "com.community"
 version = "0.0.1-SNAPSHOT"
 
-// Java 21 LTS 사용 (Virtual Threads, Pattern Matching, Record 클래스 지원)
+// Java 25 사용 (로컬 환경에 Java 25가 설치됨)
+// Spring Boot 4.0은 Java 17+ 지원, Java 25도 호환
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(25))
     }
 }
 

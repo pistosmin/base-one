@@ -11,7 +11,7 @@
 | Phase | 파일 | 상태 |
 |-------|------|------|
 | 0: 부트스트랩 | `prompt/phases/phase-0-bootstrap.md` | ✅ 완료 |
-| 1: 인증 | `prompt/phases/phase-1-auth.md` | ⬜ 대기 |
+| 1: 인증 | `prompt/phases/phase-1-auth.md` | ✅ 완료 |
 | 2: 게시글 | `prompt/phases/phase-2-post.md` | ⬜ 대기 |
 | 3: 댓글&추천 | `prompt/phases/phase-3-comment-vote.md` | ⬜ 대기 |
 | 4: 프로필&관리자 | `prompt/phases/phase-4-profile-admin.md` | ⬜ 대기 |
