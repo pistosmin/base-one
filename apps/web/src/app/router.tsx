@@ -1,69 +1,139 @@
 /**
  * ====================================================
- * 라우터 설정
+ * 앱 라우터 설정
  *
  * React Router v7을 사용한 SPA 라우팅입니다.
- * React.lazy + Suspense로 페이지 단위 코드 스플리팅을 적용합니다.
+ * React.lazy + Suspense로 페이지별 코드 스플리팅을 적용합니다.
  *
- * 주의: React Router v7부터 패키지명이 'react-router'입니다.
- *       'react-router-dom'은 사용하지 않습니다.
+ * 라우트 구조:
+ *   AppLayout (일반 레이아웃)
+ *     /                → HomePage (placeholder)
+ *     /posts           → PostListPage (placeholder)
+ *     /posts/:id       → PostDetailPage (placeholder)
+ *   AuthGuard (인증 필요)
+ *     /posts/new       → PostEditorPage (placeholder)
+ *     /notifications   → NotificationPage (placeholder)
+ *     /profile         → ProfilePage (placeholder)
+ *   /login             → LoginPage (로그인 상태면 /로 리다이렉트)
+ *   /signup            → SignupPage (로그인 상태면 /로 리다이렉트)
+ *   AdminGuard (관리자 전용)
+ *     AdminLayout
+ *       /admin/dashboard → AdminDashboardPage (placeholder)
+ *       /admin/users     → AdminUsersPage (placeholder)
  *
- * 의존성: react-router
- * 사용 위치: App.tsx에서 <AppRouter /> 형태로 사용
+ * 의존성: react-router, features/auth, shared/guards, shared/components/layout
+ * 사용 위치: app/App.tsx
  * ====================================================
  */
 
-import { Routes, Route } from 'react-router';
+import { lazy, Suspense } from 'react';
+import { Navigate, Route, Routes } from 'react-router';
+import CircularProgress from '@mui/material/CircularProgress';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+
+import { AppLayout } from '@/shared/components/layout/AppLayout';
+import { AdminLayout } from '@/shared/components/layout/AdminLayout';
+import { AuthGuard } from '@/shared/guards/AuthGuard';
+import { AdminGuard } from '@/shared/guards/AdminGuard';
+import { useAuthStore } from '@/features/auth/store/authStore';
+
+// 인증 페이지 (lazy loading)
+const LoginPage = lazy(() =>
+  import('@/features/auth').then((m) => ({ default: m.LoginPage })),
+);
+const SignupPage = lazy(() =>
+  import('@/features/auth').then((m) => ({ default: m.SignupPage })),
+);
+
+/** 로딩 스피너 (Suspense fallback) */
+function PageLoader() {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+      }}
+    >
+      <CircularProgress />
+    </Box>
+  );
+}
+
+/** placeholder 페이지 컴포넌트 생성 헬퍼 */
+function PlaceholderPage({ name }: { name: string }) {
+  return (
+    <Box sx={{ p: 4 }}>
+      <Typography variant="h6" color="text.secondary">
+        {name} (준비 중)
+      </Typography>
+    </Box>
+  );
+}
 
 /**
- * 임시 홈 페이지 컴포넌트
- * Phase 1 이후에 실제 페이지 컴포넌트로 교체됩니다.
+ * 로그인/회원가입 페이지 래퍼
+ * 이미 로그인한 사용자는 홈으로 리다이렉트
  */
-function HomePage() {
-  return (
-    <div style={{ padding: '20px', textAlign: 'center' }}>
-      <h1>🌐 커뮤니티 웹앱</h1>
-      <p>모바일 퍼스트 커뮤니티 서비스에 오신 것을 환영합니다.</p>
-    </div>
-  );
+function GuestOnlyRoute({ children }: { children: React.ReactNode }) {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+  return <>{children}</>;
 }
 
-/** 임시 로그인 페이지 */
-function LoginPage() {
-  return (
-    <div style={{ padding: '20px', textAlign: 'center' }}>
-      <h1>로그인</h1>
-      <p>Phase 1에서 구현 예정</p>
-    </div>
-  );
-}
-
-/** 임시 회원가입 페이지 */
-function SignupPage() {
-  return (
-    <div style={{ padding: '20px', textAlign: 'center' }}>
-      <h1>회원가입</h1>
-      <p>Phase 1에서 구현 예정</p>
-    </div>
-  );
-}
-
-/**
- * 앱 라우터 컴포넌트
- *
- * 기본 라우트:
- * - / : 홈 화면
- * - /login : 로그인
- * - /signup : 회원가입
- *
- * 추후 Phase별로 라우트가 추가됩니다.
- */
+/** 앱 라우터 */
 export function AppRouter() {
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
-    </Routes>
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        {/* 일반 레이아웃 (TopAppBar + BottomTabBar) */}
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<PlaceholderPage name="홈" />} />
+          <Route path="/posts" element={<PlaceholderPage name="게시글 목록" />} />
+          <Route path="/posts/:id" element={<PlaceholderPage name="게시글 상세" />} />
+
+          {/* 인증 필요 라우트 */}
+          <Route element={<AuthGuard />}>
+            <Route path="/posts/new" element={<PlaceholderPage name="글쓰기" />} />
+            <Route path="/posts/:id/edit" element={<PlaceholderPage name="글 수정" />} />
+            <Route path="/notifications" element={<PlaceholderPage name="알림" />} />
+            <Route path="/profile" element={<PlaceholderPage name="프로필" />} />
+          </Route>
+        </Route>
+
+        {/* 인증 페이지 (레이아웃 없음) */}
+        <Route
+          path="/login"
+          element={
+            <GuestOnlyRoute>
+              <LoginPage />
+            </GuestOnlyRoute>
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            <GuestOnlyRoute>
+              <SignupPage />
+            </GuestOnlyRoute>
+          }
+        />
+
+        {/* 관리자 페이지 */}
+        <Route element={<AdminGuard />}>
+          <Route element={<AdminLayout />}>
+            <Route path="/admin/dashboard" element={<PlaceholderPage name="관리자 대시보드" />} />
+            <Route path="/admin/users" element={<PlaceholderPage name="사용자 관리" />} />
+          </Route>
+        </Route>
+
+        {/* 404 처리 */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 }
