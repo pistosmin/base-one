@@ -168,6 +168,23 @@ services:
       - community-network
     restart: unless-stopped
 
+  # ──────────────────────────────────────────────────
+  # API Gateway / Reverse Proxy (Nginx)
+  # 개발 환경에서 포트 80으로 들어오는 요청을 로컬 랩탑의 프론트/백엔드로 분배
+  # ──────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: community-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./infra/docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - community-network
+    restart: unless-stopped
+
 # ──────────────────────────────────────────────────
 # Docker 볼륨 정의
 # make reset 실행 시 -v 옵션으로 모든 볼륨 삭제 가능

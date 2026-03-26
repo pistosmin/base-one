@@ -38,7 +38,7 @@
    - `UpdateCommentRequest` — record: `@NotBlank String content`
    - `CommentResponse` — record: id, UserSummaryResponse author, content, voteCount, isVoted(boolean), isDeleted(boolean), createdAt, `List<CommentResponse> children`
 4. `service/CommentService.java`:
-   - `createComment(Long postId, Long userId, CreateCommentRequest)` → 게시글 존재 확인, parentId 있으면 부모 댓글 존재 확인, Comment 저장, `post.increaseCommentCount()`
+   - `createComment(Long postId, Long userId, CreateCommentRequest)` → 게시글 존재 확인, parentId 있으면 부모 댓글 존재 확인, Comment 저장, `post.increaseCommentCount()`, 이후 `DomainEventPublisher`를 통해 `CommentCreatedEvent` 발행
    - `updateComment(Long commentId, Long userId, UpdateCommentRequest)` → 작성자 확인 후 수정
    - `deleteComment(Long commentId, Long userId)` → 작성자 또는 ADMIN 확인, `softDelete()`, `post.decreaseCommentCount()`
    - `getCommentsByPost(Long postId, Long userId)` → 모든 댓글 조회 → **트리 구조 변환**: parent == null인 것이 루트, parentId로 children 매핑. 트리 변환 로직에 단계별 주석 필수

@@ -15,6 +15,16 @@
 dev:
 	docker compose up -d
 
+## Nginx 프록시와 인프라 동시에 시작 (Nginx 포함)
+proxy:
+	docker compose up -d
+
+## 개발 환경 일괄 실행 (인프라 + 백엔드 + 프론트엔드 동시 실행)
+## 터미널은 계속 점유되므로, 백그라운드 구동을 원하면 tmux 추천
+all:
+	make dev
+	@make -j 2 api web
+
 ## 개발 인프라 종료 (컨테이너만 정지, 데이터는 유지)
 down:
 	docker compose down

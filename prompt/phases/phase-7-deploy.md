@@ -11,7 +11,7 @@
 
 - [ ] Task 7.1: 성능 최적화 (프론트 + 백엔드)
 - [ ] Task 7.2: Docker 프로덕션 배포 설정
-- [ ] Task 7.3: GitHub Actions CI/CD
+- [ ] Task 7.3: OpenAPI 기반 프론트엔드 타입 자동 생성 (CI/CD 연동)
 - [ ] Task 7.4: 모니터링 대시보드 (Grafana)
 
 ## 검증 기준
@@ -85,24 +85,22 @@
 
 ---
 
-## Task 7.3: GitHub Actions CI/CD
+## Task 7.3: OpenAPI 기반 프론트엔드 타입 자동 생성
+
+### Context
+- SpringDoc(Swagger)에서 도출된 API 스펙을 활용하여 프론트엔드의 DTO 타입과 Axios 훅을 자동 생성합니다.
 
 ### Deliverables
-1. `.github/workflows/ci.yml`:
-   - trigger: pull_request → main, develop
-   - jobs (병렬):
-     - **frontend**: checkout → node setup(22) → npm ci → lint(`npx eslint src/`) → typecheck(`npx tsc --noEmit`) → test(`npm test -- --run`) → build
-     - **backend**: checkout → java setup(21, temurin) → gradle cache → compile(`./gradlew compileJava`) → test(`./gradlew test`)
-   - PostgreSQL, Redis 서비스 컨테이너 (백엔드 통합 테스트용)
-2. `.github/workflows/deploy.yml`:
-   - trigger: push → main
-   - Docker Buildx → 빌드 + push (Docker Hub 또는 GHCR)
-   - SSH deploy or docker compose up -d (서버 상황에 따라)
-   - Health check: curl → /actuator/health
+1. `apps/web/package.json`에 `orval` 또는 `@rtk-query/codegen-openapi` (상황에 맞게 선택, 기본은 `orval`) 추가
+2. `orval.config.ts` 설정 파일 생성 (기본 API 엔드포인트: `http://localhost:8080/v3/api-docs`)
+3. 프론트엔드 `shared/types` 디렉토리에 자동 생성된 타입 및 쿼리 훅을 반영
+4. 기존 클라이언트 코드에서 수동 작성된 타입을 자동 생성된 타입으로 교체
+5. `.github/workflows/deploy.yml` 작성 (프로덕션 CD 배포용)
 
 ### Acceptance Criteria
-- [ ] PR 생성 시 CI 자동 실행 + 상태 체크
-- [ ] CI 전체 통과 시 ✅ 표시
+- [ ] `npm run generate:api` 스크립트 동작 확인
+- [ ] 자동 생성된 타입으로 프론트엔드 빌드 성공
+- [ ] CD 파이프라인 정상 배포 동작 확인
 
 ---
 

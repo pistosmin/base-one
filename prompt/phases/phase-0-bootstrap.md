@@ -42,3 +42,9 @@
 - CLAUDE.md 계층 구조 (루트 + api + web)
 - Claude Code hooks 설정 (.claude/settings.json)
 - Makefile 검증 명령어 추가 (lint, verify 등)
+
+### 2026-03-26: 아키텍처 개선 적용 (Phase 0+)
+- Nginx Reverse Proxy 설정 완료 (docker-compose, default.conf)
+- 도메인 결합도 완화를 위한 Spring 이벤트 기반 구성 (DomainEventPublisher)
+- GitHub Actions 병렬 검증 CI 파일 생성 (ci.yml)
+- Makefile 편의 명령어 추가 (make proxy, make all)

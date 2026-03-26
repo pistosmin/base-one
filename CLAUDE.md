@@ -66,6 +66,7 @@ apps/api/src/main/java/com/community/
 2. **파일 상단 설명**: 모든 새 파일의 최상단에 해당 파일의 목적, 의존성, 사용 위치를 한국어로 설명하는 블록 주석 작성.
 3. **TypeScript**: `any` 금지, strict mode. `unknown` + 타입 가드로 대체.
 4. **Java**: DTO는 record 클래스. Entity에 `@Getter @NoArgsConstructor @Builder`. `@Setter` 금지 (비즈니스 메서드로 상태 변경).
+   - **이벤트 패턴**: 서비스 간 강결합을 방지하기 위해 `DomainEventPublisher`를 활용한 이벤트 주도 통신 권장.
 5. **import**: 프론트 `@/shared/...`, 백 `com.community.domain...`
 6. **React Router v7**: `from 'react-router'` (NOT `react-router-dom`)
 7. **Spring Boot 4.0**: `jakarta.*` 패키지 사용 (`javax.*` 절대 금지)
@@ -116,6 +117,8 @@ UI 컴포넌트나 페이지를 구현하기 전에 [Google Stitch](https://stit
 ## 빠른 명령어
 ```bash
 make dev       # Docker 인프라 시작 (PostgreSQL, Redis, MinIO)
+make proxy     # Nginx 프록시 포함 인프라 및 네트워크 전체 시작
+make all       # 인프라 + 프록시 + 백엔드 + 프론트엔드 한 번에 실행
 make api       # Spring Boot 개발 서버 (localhost:8080)
 make web       # Vite 개발 서버 (localhost:5173)
 make test      # 전체 테스트

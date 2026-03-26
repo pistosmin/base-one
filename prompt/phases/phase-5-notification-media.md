@@ -50,9 +50,10 @@
    - PATCH `/api/v1/notifications/{id}/read` → 단일 읽음
    - PATCH `/api/v1/notifications/read-all` → 전체 읽음
    - GET `/api/v1/notifications/unread-count` → 미읽은 수
-6. **기존 서비스 수정** ⚠️:
-   - `CommentService.createComment()` → 댓글 저장 후 `notificationService.createNotification(postAuthorId, commentAuthorId, COMMENT, "POST", postId, "{닉네임}님이 댓글을 작성했습니다")`
-   - `VoteService.toggleVote()` → 추천 추가 시 `notificationService.createNotification(targetAuthorId, voterId, VOTE, targetType, targetId, "{닉네임}님이 추천했습니다")`
+6. **이벤트 리스너 구현** (기존 서비스 직접 수정 불필요):
+   - `NotificationEventListener.java` 생성 (`@Component`)
+   - `@Async("eventTaskExecutor") @EventListener` 메서드로 `CommentCreatedEvent` 수신 → `notificationService.createNotification(...)` 호출
+   - 동일하게 `VoteEvent` 수신 → 알림 생성
 
 ### Acceptance Criteria
 - [ ] 댓글 → 게시글 작성자 알림 (본인 댓글은 알림 X)
