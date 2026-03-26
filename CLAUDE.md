@@ -174,6 +174,170 @@ make reset     # DB/Redis 초기화 후 재시작
 6. 기존 코드 수정 시 영향 범위 설명
 7. 파일 삭제/이동 시 의존성 확인
 
+## AI 서브에이전트 라우팅 전략
+
+서브에이전트 정의 파일은 `.claude/agents/` 디렉토리에 위치합니다.
+Claude Code의 Agent tool로 `subagent_type`을 지정하여 호출합니다.
+
+### 에이전트 역할 분담
+
+| 에이전트 | 모델 | 담당 영역 | 정의 파일 |
+|---------|------|---------|----------|
+| Orchestrator | Opus | 페이즈 계획, 아키텍처 결정, 복잡한 태스크 분해 | `.claude/agents/orchestrator.md` |
+| Implementer | Sonnet | 코드 작성, 파일 생성/수정 | `.claude/agents/implementer.md` |
+| Reviewer | Opus | 비즈니스 로직 검토, 코드 품질, 보안 리뷰 | `.claude/agents/reviewer.md` |
+| Tech Advisor | Opus | 트랜잭션/동시성/정합성/성능 설계 자문 | `.claude/agents/tech-advisor.md` |
+| Verifier | Sonnet | 빌드/컴파일/린트 검증 | `.claude/agents/verifier.md` |
+| Tester | Sonnet | 테스트 작성, 실행, 결과 분석 | `.claude/agents/tester.md` |
+| Explorer | Sonnet | 코드베이스 탐색, 기존 패턴 파악 | `.claude/agents/explorer.md` |
+
+### 실행 모드 결정 규칙
+
+| 실행 모드 | 조건 | 예시 |
+|----------|------|------|
+| **병렬 (Parallel)** | 태스크 간 의존성 없음 | 프론트엔드 API 함수 탐색 + 백엔드 엔티티 패턴 탐색 |
+| **순차 (Sequential)** | 이전 태스크의 산출물이 다음 태스크의 입력 | 엔티티 -> Repository -> Service -> Controller |
+| **백그라운드 (Background)** | 결과가 당장 필요 없는 오래 걸리는 작업 | `make verify` 전체 테스트 스위트 실행 |
+| **포어그라운드 (Foreground)** | 결과가 다음 단계의 의사결정에 즉시 필요 | 기존 패턴 탐색 후 구현 방식 결정 |
+
+**병렬 실행 판단 기준:**
+- 서로 다른 파일을 생성/수정하는 태스크는 병렬 가능
+- 같은 파일을 수정하는 태스크는 순차 필수
+- 탐색(Explorer) 태스크는 거의 항상 병렬 가능
+- 검증(Verifier) + 테스트(Tester)는 구현(Implementer) 완료 후에만 실행
+
+### 페이즈 구현 표준 흐름
+
+```
+1. Orchestrator: Phase 파일을 읽고 태스크 분해 및 실행 계획 수립
+       |
+2. Explorer (병렬): 백엔드 기존 패턴 탐색  |  프론트엔드 기존 패턴 탐색
+       |
+3. Implementer (순차): 엔티티 -> Repository -> DTO -> Service -> Controller
+   Implementer (순차): API 함수 -> 훅 -> 스토어 -> 컴포넌트 -> 페이지
+   (백엔드와 프론트엔드는 서로 병렬 가능)
+       |
+4. Verifier (백그라운드): make lint / make verify 실행
+       |
+5. Tester: 테스트 작성 및 실행, 실패 원인 분석
+       |
+6. Reviewer: 전체 코드 리뷰 (비즈니스 로직, 보안, 품질)
+       |
+7. Implementer: 리뷰 피드백 반영 수정 (필요 시)
+```
+
+### 서브에이전트 트리거 조건
+
+| 상황 | 호출할 에이전트 | 이유 |
+|------|--------------|------|
+| "phase-N을 구현해줘" | Orchestrator -> Explorer -> Implementer -> ... | 전체 파이프라인 실행 |
+| 단일 파일/기능 수정 요청 | Implementer 단독 | Orchestrator 불필요 (단순 태스크) |
+| "이 코드 리뷰해줘" | Reviewer | 코드 품질 검토 |
+| "빌드 되는지 확인해줘" | Verifier | 컴파일/린트 검증 |
+| "테스트 작성/실행해줘" | Tester | 테스트 전문 |
+| "기존 코드에서 X 패턴 찾아줘" | Explorer | 탐색 전문 |
+| 커밋 전 최종 확인 | Verifier + Tester (병렬) | 빌드 + 테스트 동시 검증 |
+| 아키텍처 결정이 필요한 복잡한 변경 | Orchestrator | 분석 후 판단 필요 |
+| 트랜잭션/동시성/정합성/성능 설계 결정 | Tech Advisor | 기술 설계 자문 |
+| Implementer가 self-check에서 에스컬레이션 판단 | Tech Advisor | 복잡한 기술 시나리오 |
+
+### Opus 에스컬레이션 규칙
+
+Sonnet(Implementer)이 구현 중 아래 시나리오를 만나면 **즉시 멈추고** Opus(Orchestrator 또는 Tech Advisor)에게 에스컬레이션합니다.
+
+#### 에스컬레이션 트리거 목록
+
+| 카테고리 | 트리거 시나리오 | 에스컬레이션 대상 |
+|---------|--------------|----------------|
+| **트랜잭션 경계** | `@Transactional` 전파 레벨 선택이 필요한 경우 (REQUIRED vs REQUIRES_NEW 등) | Tech Advisor |
+| **트랜잭션 경계** | 트랜잭션 내에서 외부 API 호출(메일, 알림 등)이 포함된 경우 | Tech Advisor |
+| **트랜잭션 경계** | 서비스 간 메서드 호출에서 롤백 범위 결정이 필요한 경우 | Tech Advisor |
+| **동시성** | 좋아요 수, 조회수 등 카운터 동시 업데이트 로직 구현 | Tech Advisor |
+| **동시성** | 낙관적 락 vs 비관적 락 선택이 필요한 경우 | Tech Advisor |
+| **동시성** | `@Async` 메서드가 `@Transactional` 메서드를 호출하거나 그 반대인 경우 | Tech Advisor |
+| **동시성** | Redis 분산 락이 필요한 비즈니스 로직 (중복 요청 방지 등) | Tech Advisor |
+| **데이터 정합성** | Cascade 삭제 전략 결정 (soft delete + 연관 엔티티 처리) | Tech Advisor |
+| **데이터 정합성** | 양방향 연관관계에서 편의 메서드 설계 | Tech Advisor |
+| **데이터 정합성** | 대용량 페이징에서 offset vs cursor 기반 결정 | Tech Advisor |
+| **보안** | JWT 토큰 재발급 시 동시 요청 처리 (토큰 무효화 경쟁) | Tech Advisor |
+| **보안** | 권한 검사 레이어 설계 (Service vs Controller vs AOP) | Tech Advisor |
+| **성능** | Redis 캐시 무효화 전략 선택 (Cache-Aside vs Write-Through) | Tech Advisor |
+| **성능** | 복합 인덱스 설계 및 컬럼 순서 결정 | Tech Advisor |
+| **성능** | N+1 해결에서 fetch join vs `@BatchSize` vs `@EntityGraph` 선택 | Tech Advisor |
+| **아키텍처** | 2개 이상의 도메인이 얽힌 비즈니스 로직 설계 | Orchestrator |
+| **아키텍처** | 기존 패턴과 상충하는 새로운 패턴 도입이 필요한 경우 | Orchestrator |
+
+#### 에스컬레이션 프로토콜
+
+Implementer가 트리거 시나리오를 감지하면:
+
+1. **즉시 코드 작성을 멈춤** — 추측으로 구현하지 않음
+2. **현재 상태를 정리**하여 Opus에게 전달:
+   ```
+   ## 에스컬레이션 요청
+   - 트리거: [어떤 시나리오에 해당하는지]
+   - 컨텍스트: [구현 중인 기능, 관련 엔티티/서비스]
+   - 선택지: [Implementer가 고려한 옵션들 (있다면)]
+   - 관련 코드: [이미 작성된 관련 코드 파일 경로]
+   ```
+3. **Opus(Tech Advisor 또는 Orchestrator)가 설계 결정을 내림**
+4. **Implementer가 결정에 따라 구현을 재개**
+
+#### Opus 산출물 규격
+
+Opus는 코드를 직접 작성하지 않고, 아래 형식으로 설계 결정과 가이드라인을 제공합니다:
+
+```markdown
+## 설계 결정
+
+### 결정 사항
+- [선택한 방식과 그 이유]
+
+### 구현 가이드라인
+- [Implementer가 따라야 할 구체적 지침]
+- [사용할 어노테이션, 패턴, 클래스 구조]
+
+### 주의사항
+- [이 결정에서 흔히 발생하는 실수]
+
+### 검증 방법
+- [구현 후 올바르게 동작하는지 확인하는 방법]
+```
+
+단, 구현 가이드라인만으로 Sonnet이 올바르게 작성하기 어려운 경우(트랜잭션 전파 조합, 분산 락 패턴 등)에는 **핵심 코드 스니펫을 직접 제공**할 수 있습니다.
+
+#### Implementer Self-Check 체크리스트
+
+Implementer는 코드 작성 전 아래 질문을 스스로 확인합니다. 하나라도 "예"이면 에스컬레이션을 고려합니다:
+
+- [ ] 이 메서드에서 `@Transactional`의 전파 레벨을 기본값(REQUIRED) 외로 바꿔야 하는가?
+- [ ] 트랜잭션 안에서 외부 시스템(메일, 알림, 외부 API)을 호출하는가?
+- [ ] 두 명 이상의 사용자가 동시에 같은 데이터를 수정할 수 있는가?
+- [ ] `@Async`와 `@Transactional`이 같은 호출 체인에 있는가?
+- [ ] 엔티티 삭제 시 연관된 다른 엔티티에 영향이 있는가?
+- [ ] 이 쿼리가 10만 건 이상의 데이터에서도 성능이 괜찮은가?
+- [ ] 캐시를 도입/무효화해야 하는가?
+- [ ] JWT 토큰 관련 동시 요청 시나리오가 있는가?
+- [ ] 2개 이상의 도메인 서비스를 조합해야 하는가?
+
+**에스컬레이션 과잉 방지 원칙:**
+- 단순 CRUD, 단일 엔티티 저장/조회, 기본 페이징은 에스컬레이션 불필요
+- 프로젝트 내에 이미 동일한 패턴이 구현되어 있으면 그 패턴을 따름 (에스컬레이션 불필요)
+- 확신이 80% 이상이면 구현 후 Reviewer에게 검증 요청 (에스컬레이션 대신 리뷰)
+
+### 서브에이전트를 쓰는 기준
+
+**사용해야 할 때:**
+- Context window가 커질 것으로 예상될 때 (Phase 전체 구현 등)
+- 독립적인 검증이 필요할 때 (만든 에이전트와 검증 에이전트 분리 -> 맹점 방지)
+- 병렬화로 속도 향상이 가능할 때 (탐색 2건 동시 실행 등)
+- 전문화된 프롬프트가 품질에 영향을 줄 때 (보안 리뷰, 테스트 작성 등)
+
+**사용하지 않아도 될 때:**
+- 단일 파일 수정, 간단한 버그 수정 등 단순 태스크
+- 이미 context에 충분한 정보가 있는 경우
+- 사용자가 빠른 응답을 기대하는 간단한 질문
+
 ## API 응답 규격
 ```json
 // 성공
