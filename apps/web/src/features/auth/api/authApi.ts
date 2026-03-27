@@ -13,8 +13,8 @@
  */
 
 import { axiosInstance } from '@/shared/api/axiosInstance';
-import { ApiResponse, extractData } from '@/shared/api/apiTypes';
-import { TokenResponse } from '@/shared/types/user';
+import { extractData, type ApiResponse } from '@/shared/api/apiTypes';
+import type { TokenResponse } from '@/shared/types/user';
 
 /** 회원가입 요청 데이터 */
 export interface SignupPayload {

@@ -11,7 +11,7 @@
 spring:
   # PostgreSQL 데이터베이스 연결 (Docker Compose의 postgres 서비스)
   datasource:
-    url: jdbc:postgresql://localhost:5432/community
+    url: jdbc:postgresql://127.0.0.1:5432/community
     username: community
     password: community1234
     driver-class-name: org.postgresql.Driver
@@ -19,7 +19,7 @@ spring:
   # Redis 연결 (Docker Compose의 redis 서비스)
   data:
     redis:
-      host: localhost
+      host: 127.0.0.1
       port: 6379
 
   # JPA 추가 설정 (개발 전용)

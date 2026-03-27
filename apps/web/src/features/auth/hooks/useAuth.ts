@@ -16,7 +16,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
-import { login, logout as logoutApi, signup, SignupPayload, LoginPayload } from '../api/authApi';
+import { login, logout as logoutApi, signup, type SignupPayload, type LoginPayload } from '../api/authApi';
 import { useAuthStore } from '../store/authStore';
 
 /**

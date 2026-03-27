@@ -43,10 +43,11 @@ server:
 
 # SpringDoc (Swagger UI) 설정
 springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
   api-docs:
+    enabled: false
     path: /v3/api-docs
+  swagger-ui:
+    enabled: false
 
 # Actuator (모니터링) 설정
 management:

@@ -28,10 +28,8 @@ interface TopAppBarProps {
 
 export function TopAppBar({ title = '커뮤니티', showBackButton = false }: TopAppBarProps) {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuthStore((state) => ({
-    user: state.user,
-    isAuthenticated: state.isAuthenticated,
-  }));
+  const user = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   const handleBackClick = () => {
     navigate(-1);
