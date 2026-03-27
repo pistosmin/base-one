@@ -37,9 +37,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -147,6 +149,38 @@ public class AuthController {
         TokenResponse response = authService.refresh(request);
 
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * 이메일 중복 확인 API
+     *
+     * 회원가입 폼에서 이메일 입력 완료 후 실시간으로 중복 여부를 확인합니다.
+     * available: true이면 사용 가능, false이면 이미 사용 중인 이메일입니다.
+     *
+     * @param email 확인할 이메일 주소
+     * @return 200 OK + { available: true/false }
+     */
+    @GetMapping("/check-email")
+    @Operation(summary = "이메일 중복 확인", description = "회원가입 시 이메일 사용 가능 여부를 확인합니다.")
+    public ResponseEntity<ApiResponse<Boolean>> checkEmail(@RequestParam String email) {
+        boolean available = authService.isEmailAvailable(email);
+        return ResponseEntity.ok(ApiResponse.success(available));
+    }
+
+    /**
+     * 닉네임 중복 확인 API
+     *
+     * 회원가입 폼에서 닉네임 입력 완료 후 실시간으로 중복 여부를 확인합니다.
+     * available: true이면 사용 가능, false이면 이미 사용 중인 닉네임입니다.
+     *
+     * @param nickname 확인할 닉네임
+     * @return 200 OK + { available: true/false }
+     */
+    @GetMapping("/check-nickname")
+    @Operation(summary = "닉네임 중복 확인", description = "회원가입 시 닉네임 사용 가능 여부를 확인합니다.")
+    public ResponseEntity<ApiResponse<Boolean>> checkNickname(@RequestParam String nickname) {
+        boolean available = authService.isNicknameAvailable(nickname);
+        return ResponseEntity.ok(ApiResponse.success(available));
     }
 
     /**

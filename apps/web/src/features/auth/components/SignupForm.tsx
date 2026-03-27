@@ -11,6 +11,7 @@
  * ====================================================
  */
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,10 +22,11 @@ import {
   CircularProgress,
   Alert,
   Typography,
+  InputAdornment,
 } from '@mui/material';
 import { Link } from 'react-router';
 import { useSignup } from '../hooks/useAuth';
-import type { SignupPayload } from '../api/authApi';
+import { checkEmailAvailable, checkNicknameAvailable, type SignupPayload } from '../api/authApi';
 import { ApiError } from '@/shared/api/apiTypes';
 
 /**
@@ -50,14 +52,59 @@ type SignupFormData = z.infer<typeof signupSchema>;
 export function SignupForm() {
   const mutation = useSignup();
 
+  /** 이메일/닉네임 blur 시 중복 확인 중 상태 */
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [checkingNickname, setCheckingNickname] = useState(false);
+
   const {
     register,
     handleSubmit,
     setError,
+    getValues,
     formState: { errors },
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
   });
+
+  /**
+   * 이메일 필드 blur 시 DB에서 중복 여부 확인
+   * Zod 유효성 오류가 있으면 API 호출 생략
+   */
+  const handleEmailBlur = async () => {
+    const email = getValues('email');
+    if (errors.email || !email) return;
+    setCheckingEmail(true);
+    try {
+      const available = await checkEmailAvailable(email);
+      if (!available) {
+        setError('email', { message: '이미 사용 중인 이메일입니다.' });
+      }
+    } catch {
+      // 네트워크 오류 등은 조용히 무시 (회원가입 제출 시 서버에서 재검증)
+    } finally {
+      setCheckingEmail(false);
+    }
+  };
+
+  /**
+   * 닉네임 필드 blur 시 DB에서 중복 여부 확인
+   * Zod 유효성 오류가 있으면 API 호출 생략
+   */
+  const handleNicknameBlur = async () => {
+    const nickname = getValues('nickname');
+    if (errors.nickname || !nickname) return;
+    setCheckingNickname(true);
+    try {
+      const available = await checkNicknameAvailable(nickname);
+      if (!available) {
+        setError('nickname', { message: '이미 사용 중인 닉네임입니다.' });
+      }
+    } catch {
+      // 네트워크 오류 등은 조용히 무시
+    } finally {
+      setCheckingNickname(false);
+    }
+  };
 
   /**
    * 폼 제출 시 회원가입 API 호출
@@ -113,6 +160,16 @@ export function SignupForm() {
         disabled={mutation.isPending}
         error={!!errors.email}
         helperText={errors.email?.message}
+        onBlur={handleEmailBlur}
+        slotProps={{
+          input: {
+            endAdornment: checkingEmail ? (
+              <InputAdornment position="end">
+                <CircularProgress size={16} />
+              </InputAdornment>
+            ) : undefined,
+          },
+        }}
         sx={{
           '& .MuiOutlinedInput-root': {
             backgroundColor: '#F8F9FA',
@@ -130,6 +187,16 @@ export function SignupForm() {
         disabled={mutation.isPending}
         error={!!errors.nickname}
         helperText={errors.nickname?.message}
+        onBlur={handleNicknameBlur}
+        slotProps={{
+          input: {
+            endAdornment: checkingNickname ? (
+              <InputAdornment position="end">
+                <CircularProgress size={16} />
+              </InputAdornment>
+            ) : undefined,
+          },
+        }}
         sx={{
           '& .MuiOutlinedInput-root': {
             backgroundColor: '#F8F9FA',

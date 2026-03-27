@@ -74,6 +74,38 @@ export async function refreshToken(token: string): Promise<TokenResponse> {
 }
 
 /**
+ * 이메일 중복 확인 — GET /auth/check-email
+ *
+ * 회원가입 폼에서 이메일 blur 시 호출합니다.
+ * true: 사용 가능, false: 이미 사용 중
+ *
+ * @param email 확인할 이메일 주소
+ * @returns true이면 사용 가능한 이메일
+ */
+export async function checkEmailAvailable(email: string): Promise<boolean> {
+  const response = await axiosInstance.get<ApiResponse<boolean>>(
+    `/auth/check-email?email=${encodeURIComponent(email)}`,
+  );
+  return extractData(response.data);
+}
+
+/**
+ * 닉네임 중복 확인 — GET /auth/check-nickname
+ *
+ * 회원가입 폼에서 닉네임 blur 시 호출합니다.
+ * true: 사용 가능, false: 이미 사용 중
+ *
+ * @param nickname 확인할 닉네임
+ * @returns true이면 사용 가능한 닉네임
+ */
+export async function checkNicknameAvailable(nickname: string): Promise<boolean> {
+  const response = await axiosInstance.get<ApiResponse<boolean>>(
+    `/auth/check-nickname?nickname=${encodeURIComponent(nickname)}`,
+  );
+  return extractData(response.data);
+}
+
+/**
  * 로그아웃 — POST /auth/logout
  *
  * 서버 측에서 리프레시 토큰을 무효화합니다.

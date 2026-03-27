@@ -217,6 +217,34 @@ public class AuthService {
     }
 
     /**
+     * 이메일 사용 가능 여부 확인
+     *
+     * 회원가입 폼에서 이메일 입력 후 blur 이벤트 시 호출됩니다.
+     * 이미 가입된 이메일이면 false를 반환합니다.
+     *
+     * @param email 확인할 이메일 주소
+     * @return true: 사용 가능, false: 이미 사용 중
+     */
+    @Transactional(readOnly = true)
+    public boolean isEmailAvailable(String email) {
+        return !userRepository.existsByEmail(email);
+    }
+
+    /**
+     * 닉네임 사용 가능 여부 확인
+     *
+     * 회원가입 폼에서 닉네임 입력 후 blur 이벤트 시 호출됩니다.
+     * 이미 사용 중인 닉네임이면 false를 반환합니다.
+     *
+     * @param nickname 확인할 닉네임
+     * @return true: 사용 가능, false: 이미 사용 중
+     */
+    @Transactional(readOnly = true)
+    public boolean isNicknameAvailable(String nickname) {
+        return !userRepository.existsByNickname(nickname);
+    }
+
+    /**
      * JWT 토큰 발급 (액세스 + 리프레시)
      *
      * 새로운 액세스 토큰과 리프레시 토큰을 생성합니다.
