@@ -25,6 +25,7 @@ import {
 import { Link } from 'react-router';
 import { useSignup } from '../hooks/useAuth';
 import type { SignupPayload } from '../api/authApi';
+import { ApiError } from '@/shared/api/apiTypes';
 
 /**
  * 회원가입 폼 유효성 검증 스키마
@@ -52,6 +53,7 @@ export function SignupForm() {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
@@ -59,6 +61,7 @@ export function SignupForm() {
 
   /**
    * 폼 제출 시 회원가입 API 호출
+   * 이메일/닉네임 중복 오류는 해당 필드에 직접 표시
    */
   const onSubmit = (data: SignupFormData) => {
     const payload: SignupPayload = {
@@ -66,7 +69,17 @@ export function SignupForm() {
       password: data.password,
       nickname: data.nickname,
     };
-    mutation.mutate(payload);
+    mutation.mutate(payload, {
+      onError: (error) => {
+        if (error instanceof ApiError) {
+          if (error.code === 'DUPLICATE_EMAIL') {
+            setError('email', { message: '이미 사용 중인 이메일입니다.' });
+          } else if (error.code === 'DUPLICATE_NICKNAME') {
+            setError('nickname', { message: '이미 사용 중인 닉네임입니다.' });
+          }
+        }
+      },
+    });
   };
 
   return (
@@ -79,8 +92,10 @@ export function SignupForm() {
         gap: 2,
       }}
     >
-      {/* 서버 에러 표시 */}
-      {mutation.error && (
+      {/* 서버 에러 표시 (이메일/닉네임 중복 외 기타 오류만 표시) */}
+      {mutation.error &&
+        !(mutation.error instanceof ApiError &&
+          (mutation.error.code === 'DUPLICATE_EMAIL' || mutation.error.code === 'DUPLICATE_NICKNAME')) && (
         <Alert severity="error">
           {mutation.error instanceof Error
             ? mutation.error.message
