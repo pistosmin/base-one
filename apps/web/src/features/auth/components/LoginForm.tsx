@@ -107,7 +107,7 @@ export function LoginForm() {
         helperText={errors.email?.message}
         sx={{
           '& .MuiOutlinedInput-root': {
-            backgroundColor: '#F8F9FA',
+            backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#312F2D' : '#F2EFEA',
           },
         }}
       />
@@ -124,7 +124,7 @@ export function LoginForm() {
         helperText={errors.password?.message}
         sx={{
           '& .MuiOutlinedInput-root': {
-            backgroundColor: '#F8F9FA',
+            backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#312F2D' : '#F2EFEA',
           },
         }}
       />
@@ -157,16 +157,17 @@ export function LoginForm() {
       <Box sx={{ textAlign: 'center', mt: 2 }}>
         <Typography variant="body2" color="textSecondary">
           아직 회원이 아니신가요?{' '}
-          <Link
+          <Box
+            component={Link}
             to="/signup"
-            style={{
-              color: '#3182F6',
+            sx={{
+              color: 'primary.main',
               textDecoration: 'none',
               fontWeight: 600,
             }}
           >
             회원가입
-          </Link>
+          </Box>
         </Typography>
       </Box>
     </Box>

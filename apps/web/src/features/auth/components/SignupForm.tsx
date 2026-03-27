@@ -182,7 +182,7 @@ export function SignupForm() {
         }}
         sx={{
           '& .MuiOutlinedInput-root': {
-            backgroundColor: '#F8F9FA',
+            backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#312F2D' : '#F2EFEA',
           },
         }}
       />
@@ -214,7 +214,7 @@ export function SignupForm() {
         }}
         sx={{
           '& .MuiOutlinedInput-root': {
-            backgroundColor: '#F8F9FA',
+            backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#312F2D' : '#F2EFEA',
           },
         }}
       />
@@ -231,7 +231,7 @@ export function SignupForm() {
         helperText={errors.password?.message}
         sx={{
           '& .MuiOutlinedInput-root': {
-            backgroundColor: '#F8F9FA',
+            backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#312F2D' : '#F2EFEA',
           },
         }}
       />
@@ -248,7 +248,7 @@ export function SignupForm() {
         helperText={errors.passwordConfirm?.message}
         sx={{
           '& .MuiOutlinedInput-root': {
-            backgroundColor: '#F8F9FA',
+            backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#312F2D' : '#F2EFEA',
           },
         }}
       />
@@ -281,16 +281,17 @@ export function SignupForm() {
       <Box sx={{ textAlign: 'center', mt: 2 }}>
         <Typography variant="body2" color="textSecondary">
           이미 회원이신가요?{' '}
-          <Link
+          <Box
+            component={Link}
             to="/login"
-            style={{
-              color: '#3182F6',
+            sx={{
+              color: 'primary.main',
               textDecoration: 'none',
               fontWeight: 600,
             }}
           >
             로그인
-          </Link>
+          </Box>
         </Typography>
       </Box>
     </Box>

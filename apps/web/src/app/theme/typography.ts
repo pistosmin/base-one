@@ -19,14 +19,14 @@
  * ====================================================
  */
 
-import type { TypographyOptions } from '@mui/material/styles';
+import type { TypographyVariantsOptions } from '@mui/material/styles';
 import { tokens } from './tokens';
 
 /**
  * MUI 타이포그래피 설정
  * 토스 TDS의 타이포그래피 스케일을 MUI 포맷으로 매핑
  */
-export const typography: TypographyOptions = {
+export const typography: TypographyVariantsOptions = {
   // 전역 폰트 패밀리 (Pretendard → 시스템 폰트 폴백 체인)
   fontFamily: tokens.typography.fontFamily,
 

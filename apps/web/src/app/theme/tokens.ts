@@ -21,56 +21,56 @@ export const tokens = {
   // === 컬러 팔레트 ===
   // 토스 앱의 컬러 시스템을 참고하되, Material Design 3의 체계를 따릅니다
   color: {
-    // 메인 브랜드 색상 (토스의 시그니처 블루)
-    primary: '#3182F6',
-    primaryLight: '#EBF3FE',     // primary의 10% 불투명도 버전 (배경용)
-    primaryDark: '#1B64DA',      // hover/active 상태용
+    // 메인 브랜드 색상 (Claude의 시그니처 오렌지/브라운)
+    primary: '#D97757',
+    primaryLight: '#F9EBE6',     // primary의 연한 버전 (배경용)
+    primaryDark: '#B85B3F',      // hover/active 상태용
 
-    // 시맨틱 컬러 (Apple HIG의 시스템 컬러 참고)
+    // 시맨틱 컬러 (기본은 유지하되 클로드 톤에 맞춰 info 색상 조정)
     success: '#34C759',          // 성공, 완료
     warning: '#FF9500',          // 경고, 주의
     error: '#FF3B30',            // 에러, 삭제, 위험
-    info: '#007AFF',             // 정보성 알림
+    info: '#4A7299',             // 정보성 알림 (차분한 블루)
 
-    // 배경 컬러 (토스의 회색 계열)
-    background: '#F2F4F6',       // 페이지 전체 배경 (연한 회색)
+    // 배경 컬러 (클로드 느낌의 따뜻한 톤)
+    background: '#F7F5F2',       // 페이지 전체 배경 (따뜻한 샌드/회색)
     surface: '#FFFFFF',          // 카드, 모달 등 표면 배경
-    surfaceVariant: '#F8F9FA',   // 입력 필드 배경 등 약간 다른 표면
+    surfaceVariant: '#F2EFEA',   // 입력 필드 배경 등 약간 다른 표면
 
-    // 텍스트 컬러 (토스의 텍스트 계층)
-    textPrimary: '#191F28',      // 본문, 제목 (거의 검정)
-    textSecondary: '#8B95A1',    // 보조 텍스트, 날짜, 메타 정보
-    textTertiary: '#B0B8C1',     // 비활성 텍스트, 플레이스홀더
+    // 텍스트 컬러 (클로드의 따뜻한 텍스트 계층)
+    textPrimary: '#2D2926',      // 본문, 제목 (따뜻한 다크 그레이)
+    textSecondary: '#8C8681',    // 보조 텍스트, 날짜, 메타 정보
+    textTertiary: '#B5AFA6',     // 비활성 텍스트, 플레이스홀더
     textOnPrimary: '#FFFFFF',    // primary 배경 위의 텍스트 (흰색)
 
     // 구분선 & 테두리
-    border: '#E5E8EB',           // 카드 테두리, 구분선
-    divider: '#F2F4F6',          // 리스트 아이템 사이 얇은 구분선
+    border: '#E8E4DF',           // 카드 테두리, 구분선
+    divider: '#F7F5F2',          // 리스트 아이템 사이 얇은 구분선 (배경색과 동일하게)
   },
 
   // === 다크 모드 컬러 ===
-  // 라이트 모드 대비 반전된 밝기 + 가독성 보장
+  // 라이트 모드 대비 반전된 밝기 + 클로드의 따뜻한 느낌 보장
   darkColor: {
-    primary: '#4D96FF',
-    primaryLight: '#1A2B4A',
-    primaryDark: '#3182F6',
+    primary: '#E29578',
+    primaryLight: '#3A231C',
+    primaryDark: '#D97757',
 
     success: '#30D158',
     warning: '#FFD60A',
     error: '#FF453A',
-    info: '#0A84FF',
+    info: '#6B96C3',            // 다크모드 정보성 알림
 
-    background: '#0D1117',
-    surface: '#161B22',
-    surfaceVariant: '#21262D',
+    background: '#1A1918',      // 아주 어두운 웜 브라운/그레이
+    surface: '#252422',         // 표면 (약간 더 밝음)
+    surfaceVariant: '#312F2D',  // 입력 필드 등
 
-    textPrimary: '#E6EDF3',
-    textSecondary: '#8B949E',
-    textTertiary: '#484F58',
+    textPrimary: '#EDEBE9',     // 따뜻한 오프화이트 텍스트
+    textSecondary: '#9E9A96',   // 따뜻한 중간 회색 텍스트
+    textTertiary: '#625E5A',    // 비활성 텍스트
     textOnPrimary: '#FFFFFF',
 
-    border: '#30363D',
-    divider: '#21262D',
+    border: '#423E3B',
+    divider: '#312F2D',
   },
 
   // === 타이포그래피 ===

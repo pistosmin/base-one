@@ -20,7 +20,7 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 
 /** 탭 정보 */
 const tabs = [
-  { label: '홈', icon: Home, path: '/' },
+  { label: '홈', icon: Home, path: '/', requireAuth: false },
   { label: '글쓰기', icon: PenSquare, path: '/posts/new', requireAuth: true },
   { label: '알림', icon: Bell, path: '/notifications', requireAuth: true },
   { label: '프로필', icon: User, path: '/profile', requireAuth: true },
@@ -74,16 +74,17 @@ export function BottomTabBar() {
         right: 0,
         zIndex: 1000,
         height: 64,
-        backgroundColor: '#FFFFFF',
-        borderTop: '1px solid #E5E8EB',
+        backgroundColor: 'background.paper',
+        borderTop: 1,
+        borderColor: 'divider',
         boxShadow: '0 -4px 24px rgba(0,0,0,0.12)',
         '& .MuiBottomNavigationAction-root': {
-          color: '#8B95A1',
+          color: 'text.secondary',
           fontSize: '12px',
           minWidth: 0,
           paddingTop: '6px',
           '&.Mui-selected': {
-            color: '#3182F6',
+            color: 'primary.main',
           },
         },
       }}
