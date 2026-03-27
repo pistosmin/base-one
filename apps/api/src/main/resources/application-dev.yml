@@ -22,6 +22,12 @@ spring:
       host: 127.0.0.1
       port: 6379
 
+  # Flyway 마이그레이션 설정 (dev)
+  flyway:
+    url: ${spring.datasource.url}
+    user: ${spring.datasource.username}
+    password: ${spring.datasource.password}
+
   # JPA 추가 설정 (개발 전용)
   jpa:
     # 개발 중에는 create-drop 또는 update로 스키마 자동 관리할 수 있지만,
