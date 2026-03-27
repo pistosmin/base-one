@@ -60,11 +60,16 @@ export function SignupForm() {
     register,
     handleSubmit,
     setError,
+    clearErrors,
     getValues,
     formState: { errors },
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
   });
+
+  // register 결과를 변수로 분리 — onChange 래핑을 위해
+  const emailFieldProps = register('email');
+  const nicknameFieldProps = register('nickname');
 
   /**
    * 이메일 필드 blur 시 DB에서 중복 여부 확인
@@ -152,7 +157,12 @@ export function SignupForm() {
 
       {/* 이메일 입력 */}
       <TextField
-        {...register('email')}
+        {...emailFieldProps}
+        onChange={(e) => {
+          // react-hook-form 내부 상태 업데이트 후 서버 중복 에러 초기화
+          void emailFieldProps.onChange(e);
+          clearErrors('email');
+        }}
         type="email"
         label="이메일"
         variant="outlined"
@@ -179,7 +189,12 @@ export function SignupForm() {
 
       {/* 닉네임 입력 */}
       <TextField
-        {...register('nickname')}
+        {...nicknameFieldProps}
+        onChange={(e) => {
+          // react-hook-form 내부 상태 업데이트 후 서버 중복 에러 초기화
+          void nicknameFieldProps.onChange(e);
+          clearErrors('nickname');
+        }}
         type="text"
         label="닉네임"
         variant="outlined"
